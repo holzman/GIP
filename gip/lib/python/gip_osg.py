@@ -9,7 +9,7 @@ import socket
 import ConfigParser
 
 from gip_sections import ce, site, pbs, condor, sge, lsf, se, subcluster, \
-    cluster, cesebind, cream, slurm
+    cluster, cesebind, cream, slurm, htcondorce
 from gip_common import getLogger, py23, vdtDir, get_file_list
 
 log = getLogger("GIP")
@@ -25,6 +25,7 @@ dcache_sec = 'dcache'
 lsf_sec = 'LSF'
 cream_sec = 'CREAM'
 slurm_sec = 'SLURM'
+gateway_sec = 'Gateway'
 
 default_osg_ress_servers = \
     "https://osg-ress-1.fnal.gov:8443/ig/services/CEInfoCollector[OLD_CLASSAD]"
@@ -288,6 +289,10 @@ def configOsg(cp):
     # [CREAM]
     if cp2.has_section(cream_sec) and cp2.has_option(cream_sec, 'enabled'):
         __write_config(cream_sec, 'enabled', cream, 'enabled')
+
+    # [Gateway]
+    if cp2.has_section(gateway_sec) and cp2.has_option(gateway_sec, 'htcondor_gateway_enabled'):
+        __write_config(gateway_sec, 'htcondor_gateway_enabled', htcondorce, 'enabled')
 
     # [Misc Services]
     glexec_enabled = False

@@ -21,6 +21,7 @@ import ConfigParser
 import urllib
 import tempfile
 import glob
+import subprocess
 
 from gip_ldap import read_bdii
 
@@ -979,3 +980,51 @@ class _Constants: #pylint: disable-msg=C0103
     def __init__(self):
         self.CR = '\r'
         self.LF = '\n'
+
+
+def getHTCondorCEPort():
+    """Get what port condor-ce is running on based on its configuration"""
+
+    # If COLLECTOR_HOST is defined and has a port number, use that.
+    # Else, if COLLECTOR_PORT is defined, use that.
+    # Else, use 9619.
+
+    collector_host = getCondorCEConfigVal('COLLECTOR_HOST')
+    if collector_host:
+        if collector_host.count(':') > 1:
+            # ipv6 address, must be bracketed if it has a port at the end, i.e. [ADDR]:PORT
+            match = re.search(r'\]:(\d+)$', collector_host)
+            if match:
+                return int(match.group(1))
+        else:
+            # at most 1 colon -> hostname or ipv4 address with or without port
+            match = re.search(r':(\d+)$', collector_host)
+            if match:
+                return int(match.group(1))
+
+    try:
+        return int(getCondorCEConfigVal('COLLECTOR_PORT'))
+    except (TypeError, ValueError):
+        return 9619
+
+
+def getCondorCEConfigVal(variable):
+    """Use condor_ce_config_val to return the expanded value of a variable.
+    Returns: the stripped output of condor_ce_config_val, or None if the
+    variable is undefined or there is an error.
+    """
+    log = logging.getLogger()
+    try:
+        process = subprocess.Popen(['condor_ce_config_val', '-expand', variable],
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, error = process.communicate()
+        if error and not error.startswith('Not defined:'):
+            log.warning('condor_ce_config_val on %s reported error: %s' % (variable, error))
+        if process.returncode != 0:
+          return None
+        return output.strip()
+    except OSError:
+        return None
+
+
+

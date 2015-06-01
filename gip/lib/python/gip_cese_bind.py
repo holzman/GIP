@@ -5,7 +5,7 @@ the bindings between the two.
 """
 import re
 
-from gip_common import cp_get, cp_getBoolean
+from gip_common import cp_get, cp_getBoolean, getHTCondorCEPort
 from gip_storage import getPath
 from pbs_common import getQueueList as getPBSQueueList
 from lsf_common import getQueueList as getLSFQueueList
@@ -34,6 +34,9 @@ def getCEList(cp, extraCEs=[]):
     if cp_getBoolean(cp, 'cream', 'enabled', False):
         prefix = 'cream'
         port = 8443
+    if cp_getBoolean(cp, 'htcondorce', 'enabled', False):
+        prefix = 'htcondorce'
+        port = getHTCondorCEPort()
     ce_names = ['%s:%d/%s-%s-%%s' % (hostname, port, prefix, jobman) for hostname in hostnames]
 
     ce_list = []
